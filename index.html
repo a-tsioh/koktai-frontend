@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Console Output</title>
+</head>
+<body>
+<div id="coucou">{{message}}
+<my-comp></my-comp>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script type="text/javascript" src="web/kotlin/kotlin.js"></script>
+<script type="text/javascript" src="web/kotlin/kotlinx-html-js.js"></script>
+<script type="text/javascript" src="web/main/main.js"></script>
+<script>
+    //var x = new MyClass()
+    var app = new Vue({
+        el: '#coucou',
+        data: {
+            message: 'plop'
+        }
+    })
+</script>
+</body>
+</html>
