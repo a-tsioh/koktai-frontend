@@ -1,11 +1,7 @@
 package fr.magistry.koktai
 
 import kotlinx.html.*
-import kotlinx.html.dom.*
 import kotlinx.html.stream.createHTML
-import org.w3c.dom.Element
-import kotlin.browser.document
-import org.w3c.fetch.RequestInit
 import kotlin.browser.window
 
 //external class Vue(p: VParams) {}
@@ -14,16 +10,24 @@ data class VParams(val el: String, val data: VMessage)
 
 
 data class VMessage(val message: String)
-external object Vue {
-    fun component(name: String, params: Any)
+external class Vue(params: dynamic) {
+    companion object {
+        fun component(name: String, params: Any)
+    }
 }
 
-class Component( val data: () -> dynamic){
+class MyComponent(val data: () -> dynamic){
     public val template = createHTML().div {
             span { text("euh") }
+            br { }
             span { text ("{{message}}") }
         }
 }
+
+
+external class VueRouter(routes: dynamic)
+data class RouteDef(val path: String, val component: dynamic)
+
 
 fun main(args: Array<String>) {
     println("coucou12")
@@ -33,5 +37,24 @@ fun main(args: Array<String>) {
 
             it.json().then{data -> console.log(data)}
         }
-    Vue.component("MyComp", Component() { -> VMessage("hallo") })
+   // Vue.component("MyComp", Component() { -> VMessage("hallo") })
+
+
+    val Foo = MyComponent() { -> VMessage("Fooo")}
+    val Bar = MyComponent() { -> VMessage("Barr")}
+
+    val router = VueRouter(object {
+     val routes =   arrayOf(
+         RouteDef("/foo", Foo),
+         RouteDef("/bar", Bar)
+     )
+    })
+
+    val app = Vue( object {
+        val el = "#coucou"
+        val data = object {
+            val message = "plop"
+        }
+        val router = router
+    })//.asDynamic().`$mount`("#coucou")
 }
