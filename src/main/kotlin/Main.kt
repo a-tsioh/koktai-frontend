@@ -4,9 +4,6 @@ import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import kotlin.browser.window
 
-//external class Vue(p: VParams) {}
-data class VParams(val el: String, val data: VMessage)
-
 
 
 data class VMessage(val message: String)
@@ -23,71 +20,75 @@ class CompMeth() {
 
 class WordComponent() {
     val template = """
-        <div>
-            <span>{{word.form}}|{{word.reading}}</span>
-            <div>{{ word.definition}}</div>
+        <div class="ui card">
+        <div class="content">
+            <div class="large header">{{word.form}}</div>
+            <div class="meta">{{word.reading}}</div>
+            <div class="description">{{word.definition}}</div>
+        </div>
         </div>
     """.trimIndent()
     val props = arrayOf("word")
 }
 
-class MyComponent(val data: () -> dynamic){
-    /*val template = createHTML().div {
-            span { text("{{ sino }}") }
-            br { }
-            span { text ("{{message}}") }
-        } */
+object MyComponent {
     val template = """
         <div>
             <span>{{ sino }}</span>
             <div>{{ message }}</div>
-            <word-component
-              v-for="item in words"
-              v-bind:word="item"
-              v-bind:key="item.key"></word-component>
+            <div class="ui cards">
+                <word-component
+                  v-for="item in words"
+                  v-bind:word="item"
+                  v-bind:key="item.key"></word-component>
+            </div>
         </div>
     """.trimIndent()
     val props = arrayOf("sino")
-    var sino: dynamic = ""
-    var message: String = ""
-    var words: dynamic = null
-    object methods {
-        fun fetchData(query: String, vue: dynamic) {
-            window
-                .fetch("http://search.magistry.fr:8080/exist/rest/db/apps/Koktai/test.xq?q=$query")
-                .then {
-                    it.json().then { data ->
-                        console.log(data)
-                        vue.message = data.asDynamic()[0]["word"][0]["reading"]
-                        val words: Array<dynamic> = data.asDynamic()[0]["word"]
-                        words.indices.forEach { i ->
-                            words[i]["key"] = i
-                            val defElems: Array<dynamic> = words[i]["definition"]
-                            words[i]["definition"] = defElems.joinToString(",", limit = 5, truncated = "。。。")
+    fun data(): dynamic  {
+        return object {
+            val message = "Loading..."
+            val words = emptyArray<dynamic>()
+            val self = null
+        }
+    }
+    val watch  = object {
+        val sino = fun (to: String, _: dynamic) {
+            val self = js("this")
+            self.fetchData(to)
+        }
+    }
+
+    fun get_self() = this.asDynamic().self
+
+    val methods = object {
+            val fetchData = { query: String ->
+                val vue = js("this")
+                vue.message = "loading..."
+                vue.words.length = 0
+                window
+                    .fetch("http://search.magistry.fr:8080/exist/rest/db/apps/Koktai/test.xq?q=$query")
+                    .then {
+                        it.json().then { d ->
+                            val newWords: Array<dynamic> = d.asDynamic()[0]["word"]
+                            newWords.indices.forEach { i ->
+                                val w = newWords[i]
+                                w["key"] = w["form"] + i
+                                val defElems: Array<dynamic> = w["definition"]
+                                w["definition"] = defElems.joinToString("")//, limit = 5, truncated = "。。。")
+
+                            }
+                            vue.message = newWords[0]["key"]
+                            vue.words = newWords
+                            console.log(vue.words)
                         }
-                        vue.words = words
-                        console.log(vue)
-
                     }
-                }
+            }
         }
-    }
-    private val watch = {  ->
-        val it = this
-        object  {
-            val `$route` = { -> methods.fetchData(it.sino, it) }
-        }
-    }
-
-
-    //fun fetchData( query: String) {methods.fetchData(query)}
 
     fun created() {
-        console.log("created !")
-        console.log(this)
-        methods.fetchData(this.sino, this)
+        this.asDynamic().fetchData(this.asDynamic().sino)
     }
-
 }
 
 
@@ -98,26 +99,24 @@ data class RouteDef(val path: String, val component: dynamic) {
 
 
 fun main(args: Array<String>) {
-    println("coucou12")
-   //Vue.component("MyComp", Component() { -> VMessage("hallo") })
+    // déclaration des web-components mis à dispo
     Vue.component("WordComponent", WordComponent())
+    Vue.component("MyComponent", MyComponent)
 
-
-    val Foo = MyComponent() { -> VMessage("loading")}
-    val Bar = MyComponent() { -> VMessage("Barr")}
-
+    // config des routes de l'app
     val router = VueRouter(object {
      val routes =   arrayOf(
-         RouteDef("/foo/:sino", Foo),
-         RouteDef("/bar/:sino", Bar)
+         RouteDef("/foo/:sino", MyComponent)
+
      )
     })
 
+    // création de l'appli
     val app = Vue( object {
-        val el = "#coucou"
+        val el = "#main"
         val data = object {
             val message = "plop"
         }
         val router = router
-    })//.asDynamic().`$mount`("#coucou")
+    })
 }

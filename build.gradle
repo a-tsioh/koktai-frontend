@@ -46,6 +46,10 @@ dependencies {
 
     // include for client-side
     compile "org.jetbrains.kotlinx:kotlinx-html-js:${kotlinx_html_version}"
+
+    //semantic-ui webjar
+    compile 'org.webjars:Semantic-UI:2.4.1'
+    compile 'org.webjars:jquery:3.4.1'
 }
 
 //kotlin.target.browser { }
