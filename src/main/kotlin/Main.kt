@@ -1,10 +1,9 @@
 package fr.magistry.koktai
 
-import kotlinx.html.*
-import kotlinx.html.stream.createHTML
 import kotlin.browser.window
 
-
+import fr.magistry.koktai.components.WordCardComponent
+import fr.magistry.koktai.components.TextComponent
 
 data class VMessage(val message: String)
 external class Vue(params: dynamic) {
@@ -14,22 +13,8 @@ external class Vue(params: dynamic) {
 }
 
 
-class CompMeth() {
 
-}
 
-class WordComponent() {
-    val template = """
-        <div class="ui card">
-        <div class="content">
-            <div class="large header">{{word.form}}</div>
-            <div class="meta">{{word.reading}}</div>
-            <div class="description">{{word.definition}}</div>
-        </div>
-        </div>
-    """.trimIndent()
-    val props = arrayOf("word")
-}
 
 object MyComponent {
     val template = """
@@ -74,13 +59,9 @@ object MyComponent {
                             newWords.indices.forEach { i ->
                                 val w = newWords[i]
                                 w["key"] = w["form"] + i
-                                val defElems: Array<dynamic> = w["definition"]
-                                w["definition"] = defElems.joinToString("")//, limit = 5, truncated = "。。。")
-
                             }
                             vue.message = newWords[0]["key"]
                             vue.words = newWords
-                            console.log(vue.words)
                         }
                     }
             }
@@ -100,8 +81,9 @@ data class RouteDef(val path: String, val component: dynamic) {
 
 fun main(args: Array<String>) {
     // déclaration des web-components mis à dispo
-    Vue.component("WordComponent", WordComponent())
+    Vue.component("WordComponent", WordCardComponent())
     Vue.component("MyComponent", MyComponent)
+    Vue.component("TextComponent", TextComponent())
 
     // config des routes de l'app
     val router = VueRouter(object {
@@ -115,7 +97,7 @@ fun main(args: Array<String>) {
     val app = Vue( object {
         val el = "#main"
         val data = object {
-            val message = "plop"
+            val message = "plop24"
         }
         val router = router
     })
