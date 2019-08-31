@@ -20,15 +20,22 @@ class TextData(val content: Array<TextElem> ) {
     companion object {
 
         fun splitTone(s: String): String =
-            s.replace(Regex("(?=[˫ˋˊ˪ㆷㆵ])"),"\n")
+            s.replace(Regex("(?=[˫ˋˊ˪ㆷㆵㆶ])"),"\n")
 
         fun parseJson(json: Array<dynamic>): TextData = TextData(json.mapIndexed { i,e ->
             if(e is String) RawText(i.toString(),e)
             else {
                 val txt: String = e.g["#text"]
                 val ref: String = e.g.ref
-                if(ref.startsWith("ruby"))  RubyText(i.toString(),ref, splitTone(txt))
-                else GText(i.toString(), ref, txt)
+                val type = ref.split("-")[0]
+                console.log(ref)
+                when(type) {
+                    "ruby" ->  RubyText(i.toString(),ref, splitTone(txt))
+                    "mapped" ->  MappedText(i.toString(),ref, splitTone(txt))
+                    "hj" -> IDSText(i.toString(),ref, splitTone(txt))
+                    else -> GText(i.toString(), ref, txt)
+                }
+
             }
         }.toTypedArray())
     }
@@ -43,12 +50,12 @@ class TextData(val content: Array<TextElem> ) {
 class TextComponent() {
     val template = """
         <span>
-            <span v-if="simple" style="display: inline-block; position: relative; top: 0px;">{{elem.s}}</span>
+            <span v-if="simple" :style="style">{{text}}</span>
             <pre v-else-if="isRuby"
                     class="with_popup"
                     :style="style"
-                    v-bind:data-html="imgPopup">{{elem.s}}</pre>
-            <span v-else>{{elem.s}}</span>
+                    v-bind:data-html="popup">{{text}}</pre>
+            <span v-else :style="style" class="with_popup" :data-html="popup">{{text}}</span>
         </span>
     """.trimIndent()
 
@@ -63,9 +70,12 @@ class TextComponent() {
             val self = js("this")
             self.elem is RubyText
         }
-        val imgPopup = { ->
+        val text = { ->
             val self = js("this")
-
+            self.elem.s
+        }
+        val popup = { ->
+            val self = js("this")
             val ref: String = self.elem.ref
             val(_, font, code) = ref.split("-")
             "<div class='content'><img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img></div>"
@@ -74,22 +84,30 @@ class TextComponent() {
         val style = {->
             val self = js("this")
             val txt: String = self.elem.s
-            val l = txt.replace("\n.*".toRegex(),"").length
-            val fs = min(0.5,(1.0/l)).toString()
-            """font-size: ${fs}em;
-            position: relative;
-            top: 0.2em;
-            display: inline-block;
-            writing-mode: vertical-lr;
-            margin: 0px;
-            margin-right: 0.2em;
-            padding-top:0.4em;
-            line-height:1em;
-            vertical-align: center;
-            text-align: center;
-            text-orientation: upright;
-            """.trimIndent()
-
+            val l = txt.replace("\n.*".toRegex(), "").length
+            val fs = min(0.5, (1.0 / l)).toString()
+            when(self.elem) {
+                is RubyText ->
+                """font-size: ${fs}em;
+                position: relative;
+                top: 0.2em;
+                display: inline-block;
+                writing-mode: vertical-lr;
+                margin: 0px;
+                margin-right: 0.2em;
+                padding-top:0.4em;
+                line-height:1em;
+                vertical-align: center;
+                text-align: center;
+                text-orientation: upright;
+                """.trimIndent()
+                is RawText -> """ 
+                    display : inline -block;
+                    position: relative; 
+                    top: 0 px;
+                    """.trimIndent()
+                else -> ""
+            }
         }
     }
 
