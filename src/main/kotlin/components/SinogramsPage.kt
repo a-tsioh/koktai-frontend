@@ -3,17 +3,18 @@ package fr.magistry.koktai.components
 import kotlin.browser.window
 
 
-object WordsPage {
+object SinogramsPage {
     val template = """
         <div>
+            <span>{{ sino }}</span>
             <div v-if="loading" class="ui inverted container">
-                    <div class="ui large inverted indeterminate text active loader">查 「{{ sino }}」 中</div>
+                    <div class="ui large inverted indeterminate text active loader">Loading</div>
             </div>
-            <div v-else class="ui Huge two stackable cards">
-                <word-component
-                  v-for="item in words"
-                  v-bind:word="item"
-                  v-bind:key="item.key"></word-component>
+            <div v-else class="ui two stackable cards">
+                <sinogram-component
+                  v-for="item in entries"
+                  v-bind:sino="item"
+                  v-bind:key="item.key"></sinogram-component>
             </div>
         </div>
     """.trimIndent()
@@ -21,7 +22,7 @@ object WordsPage {
     fun data(): dynamic  {
         return object {
             var loading = true
-            val words = emptyArray<dynamic>()
+            val entries = emptyArray<dynamic>()
         }
     }
     val watch  = object {
@@ -37,20 +38,22 @@ object WordsPage {
         val fetchData = { query: String ->
             val vue = js("this")
             vue.loading = true
-            vue.words.length = 0
+            vue.entries.length = 0
             window
-                .fetch("http://search.magistry.fr/koktai/test.xq?q=$query")
+                .fetch("http://search.magistry.fr/koktai/sino.xq?q=$query")
                 .then {
                     it.json().then { d ->
                         val data: Array<dynamic> = d.asDynamic()
-                        if(data.size == 0) vue.words.length = 0
+                        if(data.size == 0) vue.entries.length = 0
                         else {
-                            val newWords: Array<dynamic> = data[0]["word"]
-                            newWords.indices.forEach { i ->
-                                val w = newWords[i]
-                                w["key"] = w["form"] + i
+                            val newEntries: Array<dynamic> = data[0]["sinogram"]
+                            console.log(newEntries)
+                            newEntries.indices.forEach { i ->
+                                val w = newEntries[i]
+                                w["key"] = vue.sino + i
+                                w["form"] = vue.sino
                             }
-                            vue.words = newWords
+                            vue.entries = newEntries
                         }
                         vue.loading = false
                     }

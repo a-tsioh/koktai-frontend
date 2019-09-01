@@ -2,21 +2,46 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>吳壽禮</title>
+    <title>吳守禮</title>
     <link rel="stylesheet" href="semui/semantic.min.css"/>
     <script src="semui/jquery.min.js"></script>
     <script src="semui/semantic.min.js"></script>
+    <style>
+        body {
+            background: url(assets/images/small-bg.jpg) no-repeat bottom center scroll;
+            background-color: black;
+            background-size: cover;
+            width: 100%;
+        }
+        div#main {
+            margin-top:50px;
+        }
+    </style>
 </head>
 <body>
-
-<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<！--script src="https://unpkg.com/vue/dist/vue.js"></script-->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.10"></script>
 <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<div id="main">
+    <div class="ui fixed inverted menu">
+        <div class="ui container">
+            <a href="#/" class="header item">
+                <i class="ui book icon"></i>
+                《國臺對照活用辭典》
+            </a>
+            <div class="ui item">
+                <div class="ui icon input" id="search_input">
+                    <i class="search link icon"></i>
+                    <input @keyup.enter="search($event)" v-model="query" placeholder="search..." type="text"></div>
+            </div>
+            <div class="ui inverted right menu">
+                <a href="#" class="item" id="button_about">關於</a>
+                <a href="#" class="item" id="button_preface">代序</a>
+                <a href="#" class="item" id="button_contact">聯絡</a>
+            </div>
+        </div>
 
-<div id="main">{{message}}
-    <p>
-        <router-link to="/words/好">Go to 好</router-link>
-        <router-link to="/words/壞">Go to 壞</router-link>
-    </p>
+</div>
 <router-view></router-view>
 </div>
 

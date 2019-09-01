@@ -1,5 +1,6 @@
 package fr.magistry.koktai.components
 
+import org.w3c.dom.Text
 import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.min
@@ -22,22 +23,24 @@ class TextData(val content: Array<TextElem> ) {
         fun splitTone(s: String): String =
             s.replace(Regex("(?=[˫ˋˊ˪ㆷㆵㆶ])"),"\n")
 
-        fun parseJson(json: Array<dynamic>): TextData = TextData(json.mapIndexed { i,e ->
-            if(e is String) RawText(i.toString(),e)
-            else {
-                val txt: String = e.g["#text"]
-                val ref: String = e.g.ref
-                val type = ref.split("-")[0]
-                console.log(ref)
-                when(type) {
-                    "ruby" ->  RubyText(i.toString(),ref, splitTone(txt))
-                    "mapped" ->  MappedText(i.toString(),ref, splitTone(txt))
-                    "hj" -> IDSText(i.toString(),ref, splitTone(txt))
-                    else -> GText(i.toString(), ref, txt)
-                }
+        fun parseJson(json: Any): TextData = when(json) {
+            is Array<dynamic> -> TextData(json.mapIndexed { i,e ->
+                if(e is String) RawText(i.toString(),e)
+                else {
+                    val txt: String = e.g["#text"]
+                    val ref: String = e.g.ref
+                    val type = ref.split("-")[0]
+                    when(type) {
+                        "ruby" ->  RubyText(i.toString(),ref, splitTone(txt))
+                        "mapped" ->  MappedText(i.toString(),ref, splitTone(txt))
+                        "hj" -> IDSText(i.toString(),ref, splitTone(txt))
+                        else -> GText(i.toString(), ref, txt)
+                    }
 
-            }
-        }.toTypedArray())
+                }
+            }.toTypedArray())
+            else -> TextData(emptyArray())
+        }
     }
 
     override fun toString(): String =
@@ -47,7 +50,7 @@ class TextData(val content: Array<TextElem> ) {
 }
 
 
-class TextComponent() {
+object TextComponent {
     val template = """
         <span>
             <span v-if="simple" :style="style">{{text}}</span>
@@ -118,19 +121,28 @@ class TextComponent() {
     }
 }
 
+object TextSpanComponent {
+    val template = """
+        <span>
+        <text-component 
+                    v-for="t in text.content"
+                    v-bind:key="t.key"
+                    v-bind:elem="t"></text-component>
+        </span>
+    """.trimIndent()
+    val props = arrayOf("text")
+}
+
 data class WordData(val form: String, val reading: String, val definition: TextData)
 
-class WordCardComponent() {
+object WordCardComponent {
     val template = """
-        <div class="ui card">
+        <div class="ui stackable card">
         <div class="content">
             <div class="large header">{{wd.form}}</div>
             <div class="meta">{{wd.reading}}</div>
             <div class="description">
-                <text-component 
-                    v-for="t in wd.definition.content"
-                    v-bind:key="t.key"
-                    v-bind:elem="t"></text-component>
+                <text-span-component :text="wd.definition"/>
             </div>
         </div>
         </div>
@@ -144,4 +156,60 @@ class WordCardComponent() {
             WordData(w.form, w.reading, TextData.parseJson(w.definition))
         }
     }
+}
+
+data class SinogramData(val pron: TextData,
+                        val fanqie: TextData,
+                        val guoyin: TextData,
+                        val taikam: TextData,
+                        val pumin: TextData,
+                        val words: Array<String>)
+
+
+object SinogramCardComponent {
+    val template = """
+        <div class="ui stackable card">
+        <div class="content">
+            <div class="large header">{{sino.form}}</div>
+            <div class="huge meta"><text-span-component :text="e.pron"/></div>
+            <div class="description">
+                <div class="ui segment">
+                    <text-span-component :text="e.fanqie"/>
+                </div>
+                <div class="ui segment">
+                    <p>國音：<text-span-component :text="e.guoyin"/></p>
+                    <p>台甘：<text-span-component :text="e.taikam"/></p>
+                    <p>普閩：<text-span-component :text="e.pumin"/></p>
+                </div>
+                <div class="ui segment">
+                <h2>詞:</h2>
+                <p v-for="w in e.words">
+                    <router-link :to="{name: 'words', params: {sino: w}  }">{{w}}</router-link>
+                </p>
+                </div>
+            </div>
+        </div>
+        </div>
+    """.trimIndent()
+
+    val props = arrayOf("sino")
+
+    val computed = object {
+        val e = { ->
+            val self = js("this")
+            val s = self.sino
+            console.log(self.sino)
+            val sd = SinogramData(
+                TextData.parseJson(s?.pron),
+                TextData.parseJson(s?.fanqie),
+                TextData.parseJson(s?.guoyin),
+                TextData.parseJson(s?.taikam),
+                TextData.parseJson(s?.pumin),
+                s.words
+            )
+            console.log(sd)
+            sd
+        }
+    }
+
 }
