@@ -31,8 +31,8 @@
             </a>
             <div class="ui item">
                 <div class="ui icon input" id="search_input">
-                    <i class="search link icon"></i>
-                    <input @keyup.enter="search($event)" v-model="query" placeholder="search..." type="text"></div>
+                    <i class="search link icon" @click="search()" ></i>
+                    <input @keyup.enter="search()" v-model="query" placeholder="search..." type="text"></div>
             </div>
             <div class="ui inverted right menu">
                 <a href="#" class="item" id="button_about">關於</a>

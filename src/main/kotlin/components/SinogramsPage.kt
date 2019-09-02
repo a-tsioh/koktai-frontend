@@ -5,10 +5,10 @@ import kotlin.browser.window
 
 object SinogramsPage {
     val template = """
-        <div>
-            <span>{{ sino }}</span>
-            <div v-if="loading" class="ui inverted container">
-                    <div class="ui large inverted indeterminate text active loader">Loading</div>
+            <div v-if="loading" class="ui container">
+                <div class="ui active dimmer">
+                    <div class="ui large  indeterminate text  loader">查 「{{ sino }}」 中</div>
+                </div>
             </div>
             <div v-else class="ui two stackable cards">
                 <sinogram-component
@@ -16,7 +16,6 @@ object SinogramsPage {
                   v-bind:sino="item"
                   v-bind:key="item.key"></sinogram-component>
             </div>
-        </div>
     """.trimIndent()
     val props = arrayOf("sino")
     fun data(): dynamic  {

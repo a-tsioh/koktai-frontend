@@ -46,7 +46,7 @@ fun main(args: Array<String>) {
         }
         val router = router
         val methods = object {
-            val search = { ev: dynamic ->
+            val search = { ->
                 val self = js("this")
                 console.log(ev)
                 console.log(self.query)
