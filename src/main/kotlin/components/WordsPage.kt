@@ -5,6 +5,8 @@ import kotlin.browser.window
 
 object WordsPage {
     val template = """
+        <div class="ui inverted segment" style="min-height:10em">
+                <h2>詞</h2>
             <div v-if="loading" class="ui container">
                 <div class="ui active dimmer">
                     <div class="ui large indeterminate text loader">查 「{{ sino }}」 中</div>
@@ -16,6 +18,7 @@ object WordsPage {
                   v-bind:word="item"
                   v-bind:key="item.key"></word-component>
             </div>
+        </div>
     """.trimIndent()
     val props = arrayOf("sino")
     fun data(): dynamic  {
@@ -39,7 +42,7 @@ object WordsPage {
             vue.loading = true
             vue.words.length = 0
             window
-                .fetch("http://search.magistry.fr/koktai/test.xq?q=$query")
+                .fetch("https://data.koktai.net/koktai/test.xq?q=$query")
                 .then {
                     it.json().then { d ->
                         val data: Array<dynamic> = d.asDynamic()

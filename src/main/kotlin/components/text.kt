@@ -1,5 +1,6 @@
 package fr.magistry.koktai.components
 
+import fr.magistry.koktai.utils.Tailo
 import org.w3c.dom.Text
 import kotlin.browser.document
 import kotlin.browser.window
@@ -12,7 +13,21 @@ abstract class TextElem {
 
 data class RawText(override val key: String, override val s: String): TextElem()
 data class GText(override val key: String,val ref: String, override val s: String): TextElem()
-data class RubyText(override val key: String,val ref: String, override val s: String): TextElem()
+data class RubyText(override val key: String,val ref: String, val parts: Array<String>): TextElem() {
+    override val s: String = parts.joinToString("\n")
+}
+
+val tones: List<String> = "˫ˋˊ˪ㆷㆵㆶ".toList().map {it -> it.toString() }
+
+fun analyzeRuby(s: String): Array<String> {
+    val hasDot: Boolean = s.contains('\u0358')
+    val (toneIdx, tone) = s.findAnyOf(tones) ?: Pair(s.length, null)
+    val segmental = s.substring(0,toneIdx)
+    val result = listOfNotNull(segmental, tone).toTypedArray()
+    if(hasDot) result[result.lastIndex] = "\u2024" + result[result.lastIndex]
+    return result
+}
+
 data class IDSText(override val key: String,val ref: String, override val s: String): TextElem()
 data class MappedText(override val key: String,val ref: String, override val s: String): TextElem()
 
@@ -31,7 +46,7 @@ class TextData(val content: Array<TextElem> ) {
                     val ref: String = e.g.ref
                     val type = ref.split("-")[0]
                     when(type) {
-                        "ruby" ->  RubyText(i.toString(),ref, splitTone(txt))
+                        "ruby" ->  RubyText(i.toString(),ref, analyzeRuby(txt)) //splitTone(txt))
                         "mapped" ->  MappedText(i.toString(),ref, splitTone(txt))
                         "hj" -> IDSText(i.toString(),ref, splitTone(txt))
                         else -> GText(i.toString(), ref, txt)
@@ -54,10 +69,12 @@ object TextComponent {
     val template = """
         <span>
             <span v-if="simple" :style="style">{{text}}</span>
-            <pre v-else-if="isRuby"
-                    class="with_popup"
+            <span v-else-if="isRuby"
+                    class="with_popup ruby"
                     :style="style"
-                    v-bind:data-html="popup">{{text}}</pre>
+                    :data-html="popup">
+                    <p class="ruby" v-for="l in text">{{l}}</p>
+            </span>
             <span v-else :style="style" class="with_popup" :data-html="popup">{{text}}</span>
         </span>
     """.trimIndent()
@@ -75,35 +92,43 @@ object TextComponent {
         }
         val text = { ->
             val self = js("this")
-            self.elem.s
+            when(self.elem) {
+                is RubyText -> self.elem.parts
+                else -> self.elem.s
+            }
+
         }
         val popup = { ->
             val self = js("this")
             val ref: String = self.elem.ref
             val(_, font, code) = ref.split("-")
-            "<div class='content'><img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img></div>"
+            if(self.elem is RubyText)
+                "<div class='content'><img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img></div>" +
+                        "<span class=\"ui small\">${Tailo.fromZhuyin((self.elem.parts as Array<String>).joinToString(""))}</span>"
+            else  "<div class='content'><img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img></div>"
         }
 
         val style = {->
             val self = js("this")
-            val txt: String = self.elem.s
-            val l = txt.replace("\n.*".toRegex(), "").length
-            val fs = min(0.5, (1.0 / l)).toString()
             when(self.elem) {
-                is RubyText ->
-                """font-size: ${fs}em;
-                position: relative;
-                top: 0.2em;
-                display: inline-block;
-                writing-mode: vertical-lr;
-                margin: 0px;
-                margin-right: 0.2em;
-                padding-top:0.4em;
-                line-height:1em;
-                vertical-align: center;
-                text-align: center;
-                text-orientation: upright;
-                """.trimIndent()
+                is RubyText -> {
+                    val txt: String = self.elem.parts[0]
+                    val l = txt.length
+                    val fs = min(0.5, (1.0 / l)).toString()
+                    """font-size: ${fs}em;
+                    position: relative;
+                    top: 0.2em;
+                    display: inline-block;
+                    writing-mode: vertical-lr;
+                    margin: 0px;
+                    margin-right: 0.2em;
+                    padding-top:0.4em;
+                    line-height:1em;
+                    vertical-align: center;
+                    text-align: center;
+                    text-orientation: upright;
+                    """.trimIndent()
+                }
                 is RawText -> """ 
                     display : inline -block;
                     position: relative; 

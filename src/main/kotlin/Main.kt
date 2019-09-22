@@ -48,7 +48,6 @@ fun main(args: Array<String>) {
         val methods = object {
             val search = { ->
                 val self = js("this")
-                console.log(ev)
                 console.log(self.query)
                 self.`$router`.push( object { val name =  "search"; val params = object { val query = self.query } })
 

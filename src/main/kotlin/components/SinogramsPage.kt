@@ -5,6 +5,8 @@ import kotlin.browser.window
 
 object SinogramsPage {
     val template = """
+        <div class="ui inverted segment" style="min-height:10em">
+            <h2>字</h2>
             <div v-if="loading" class="ui container">
                 <div class="ui active dimmer">
                     <div class="ui large  indeterminate text  loader">查 「{{ sino }}」 中</div>
@@ -16,6 +18,7 @@ object SinogramsPage {
                   v-bind:sino="item"
                   v-bind:key="item.key"></sinogram-component>
             </div>
+        </div>
     """.trimIndent()
     val props = arrayOf("sino")
     fun data(): dynamic  {
@@ -38,25 +41,28 @@ object SinogramsPage {
             val vue = js("this")
             vue.loading = true
             vue.entries.length = 0
-            window
-                .fetch("http://search.magistry.fr/koktai/sino.xq?q=$query")
-                .then {
-                    it.json().then { d ->
-                        val data: Array<dynamic> = d.asDynamic()
-                        if(data.size == 0) vue.entries.length = 0
-                        else {
-                            val newEntries: Array<dynamic> = data[0]["sinogram"]
-                            console.log(newEntries)
-                            newEntries.indices.forEach { i ->
-                                val w = newEntries[i]
-                                w["key"] = vue.sino + i
-                                w["form"] = vue.sino
+            for(zi in query) {
+                window
+                    .fetch("https://data.koktai.net/koktai/sino.xq?q=$zi")
+                    .then {
+                        it.json().then { d ->
+                            val data: Array<dynamic> = d.asDynamic()
+                            if (data.size == 0) vue.entries.length = 0
+                            else {
+                                val newEntries: Array<dynamic> = data[0]["sinogram"]
+                                console.log(newEntries)
+                                newEntries.indices.forEach { i ->
+                                    console.log(i)
+                                    val w = newEntries[i]
+                                    w["key"] = vue.sino + i
+                                    //w["form"] = vue.sino
+                                }
+                                for (e in newEntries) vue.entries.push(e)
                             }
-                            vue.entries = newEntries
+                            vue.loading = false
                         }
-                        vue.loading = false
                     }
-                }
+            }
         }
     }
 
