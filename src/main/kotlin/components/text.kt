@@ -1,6 +1,10 @@
 package fr.magistry.koktai.components
 
 import fr.magistry.koktai.utils.Tailo
+import kotlinx.html.dom.create
+import kotlinx.html.img
+import kotlinx.html.HTML
+import kotlinx.html.stream.createHTML
 import org.w3c.dom.Text
 import kotlin.browser.document
 import kotlin.browser.window
@@ -75,6 +79,12 @@ object TextComponent {
                     :data-html="popup">
                     <p class="ruby" v-for="l in text">{{l}}</p>
             </span>
+            <span v-else-if="isImg"
+                    class="with_popup ruby"
+                    
+                    :data-html="popup">
+                    <img :style="styleImg" :src="imgSrc"></img>
+            </span>            
             <span v-else :style="style" class="with_popup" :data-html="popup">{{text}}</span>
         </span>
     """.trimIndent()
@@ -90,10 +100,27 @@ object TextComponent {
             val self = js("this")
             self.elem is RubyText
         }
+        val isImg = { ->
+            val self = js("this")
+            self.elem is IDSText
+        }
+        val imgSrc = { ->
+            val self = js("this")
+            val ref: String = self.elem.ref
+            val (_, font, code) = ref.split("-")
+            "http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png"
+            //(document.create.img { src = "http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png"})
+        }
         val text = { ->
             val self = js("this")
             when(self.elem) {
                 is RubyText -> self.elem.parts
+                is IDSText -> {
+                    val ref: String = self.elem.ref
+                    val (_, font, code) = ref.split("-")
+                    (document.create.img { src = "http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png"})
+                    //"<img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img>"
+                }
                 else -> self.elem.s
             }
 
@@ -105,9 +132,23 @@ object TextComponent {
             if(self.elem is RubyText)
                 "<div class='content'><img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img></div>" +
                         "<span class=\"ui small\">${Tailo.fromZhuyin((self.elem.parts as Array<String>).joinToString(""))}</span>"
-            else  "<div class='content'><img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img></div>"
+            else
+                ""
+                self.elem.s
+                //"<div class='content'><img src='http://koktai-beta.magistry.fr/assets/img/${font.drop(1).toLowerCase()}/${code.drop(1).toLowerCase()}.png'></img></div>"
         }
-
+        val styleImg = { ->
+            """
+                display : inline-block;
+                position: relative; 
+                top:0px;
+                margin: 0px;
+                padding: 0px;
+                height: 1.1em;
+                vertical-align: middle;
+                padding-bottom: 0.2em;
+            """.trimIndent()
+        }
         val style = {->
             val self = js("this")
             when(self.elem) {
