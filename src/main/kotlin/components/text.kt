@@ -1,13 +1,12 @@
 package fr.magistry.koktai.components
 
+import fr.magistry.koktai.components.TextComponent.text_component
+import fr.magistry.koktai.components.TextSpanComponent.text_span_component
 import fr.magistry.koktai.utils.Tailo
+import kotlinx.html.*
 import kotlinx.html.dom.create
-import kotlinx.html.img
-import kotlinx.html.HTML
 import kotlinx.html.stream.createHTML
-import org.w3c.dom.Text
 import kotlin.browser.document
-import kotlin.browser.window
 import kotlin.math.min
 
 abstract class TextElem {
@@ -70,24 +69,47 @@ class TextData(val content: Array<TextElem> ) {
 
 
 object TextComponent {
-    val template = """
-        <span>
-            <span v-if="simple" :style="style">{{text}}</span>
-            <span v-else-if="isRuby"
-                    class="with_popup ruby"
-                    :style="style"
-                    :data-html="popup">
-                    <p class="ruby" v-for="l in text">{{l}}</p>
-            </span>
-            <span v-else-if="isImg"
-                    class="with_popup ruby"
-                    
-                    :data-html="popup">
-                    <img :style="styleImg" :src="imgSrc"></img>
-            </span>            
-            <span v-else :style="style" class="with_popup" :data-html="popup">{{text}}</span>
-        </span>
-    """.trimIndent()
+    class Component(consumer: TagConsumer<*>) :
+        HTMLTag("text-component", consumer, emptyMap(),
+            inlineTag = true, emptyTag = false) {
+    }
+
+    fun SPAN.text_component(block: Component.() -> Unit = {}) {
+        Component(consumer).visit(block)
+    }
+
+
+    val template = createHTML()
+        .span {
+            span() {
+                attributes["v-if"] = "simple"
+                attributes["v-bind:style"] = "style"
+                +"{{text}}"
+            }
+            span("with_popup ruby") {
+                attributes["v-else-if"] = "isRuby"
+                attributes["v-bind:style"] = "style"
+                attributes["v-bind:data-html"] = "popup"
+                p("ruby") {
+                    attributes["v-for"] = "l in text"
+                    +"{{l}}"
+                }
+            }
+            span("with_popup ruby") {
+                attributes["v-else-if"] = "isImg"
+                attributes["v-bind:data-html"] = "popup"
+                img {
+                    attributes["v-bind:style"] = "styleImg"
+                    attributes["v-bind:src"] = "imgSrc"
+                }
+            }
+            span("with_popup") {
+                attributes["v-else"] = ""
+                attributes["v-bind:style"] = "style"
+                attributes["v-bind:data-html"] = "popup"
+                +"{{text}}"
+            }
+        }
 
     val props = arrayOf("elem")
 
@@ -171,7 +193,7 @@ object TextComponent {
                     """.trimIndent()
                 }
                 is RawText -> """ 
-                    display : inline -block;
+                    display : inline-block;
                     position: relative; 
                     top: 0 px;
                     """.trimIndent()
@@ -188,31 +210,55 @@ object TextComponent {
 }
 
 object TextSpanComponent {
-    val template = """
-        <span>
-        <text-component 
-                    v-for="t in text.content"
-                    v-bind:key="t.key"
-                    v-bind:elem="t"></text-component>
-        </span>
-    """.trimIndent()
+    class Component(consumer: TagConsumer<*>) :
+        HTMLTag("text-span-component", consumer, emptyMap(),
+            inlineTag = true, emptyTag = false) {
+    }
+
+    fun P.text_span_component(block: TextSpanComponent.Component.() -> Unit = {}) {
+        TextSpanComponent.Component(consumer).visit(block)
+    }
+    fun DIV.text_span_component(block: TextSpanComponent.Component.() -> Unit = {}) {
+        TextSpanComponent.Component(consumer).visit(block)
+    }
+
+    val template = createHTML()
+        .span {
+            text_component {
+                attributes["v-for"] = "t in text.content"
+                attributes["v-bind:key"] = "t.key"
+                attributes["v-bind:elem"] = "t"
+            }
+        }
+
     val props = arrayOf("text")
 }
 
 data class WordData(val form: String, val reading: String, val definition: TextData)
 
 object WordCardComponent {
-    val template = """
-        <div class="ui stackable card">
-        <div class="content">
-            <div class="large header">{{wd.form}}</div>
-            <div class="meta">{{wd.reading}}</div>
-            <div class="description">
-                <text-span-component :text="wd.definition"/>
-            </div>
-        </div>
-        </div>
-    """.trimIndent()
+    class Component(consumer: TagConsumer<*>) :
+        HTMLTag("word-component", consumer, emptyMap(),
+            inlineTag = true, emptyTag = false) {
+    }
+
+    fun DIV.word_component(block: Component.() -> Unit = {}) {
+        Component(consumer).visit(block)
+    }
+
+    val template = createHTML()
+        .div("ui stackable card") {
+            div("content") {
+                div("large header") { +"{{wd.form}}"}
+                div("meta") {+"{{wd.reading}}"}
+                div("description") {
+                    text_span_component() {
+                        attributes["v-bind:text"] = "wd.definition"
+                    }
+                }
+            }
+        }
+
     val props = arrayOf("word")
 
     val computed = object {
@@ -233,7 +279,62 @@ data class SinogramData(val pron: TextData,
 
 
 object SinogramCardComponent {
-    val template = """
+    class Component(consumer: TagConsumer<*>) :
+        HTMLTag("sinogram-component", consumer, emptyMap(),
+            inlineTag = true, emptyTag = false) {
+    }
+
+    fun DIV.sinogram_component(block: Component.() -> Unit = {}) {
+        Component(consumer).visit(block)
+    }
+
+
+    class RouterLinkComponent(consumer: TagConsumer<*>) :
+        HTMLTag("router-link", consumer, emptyMap(),
+            inlineTag = true, emptyTag = false) {
+    }
+
+    private fun P.router_link(block: RouterLinkComponent.() -> Unit = {}) {
+        RouterLinkComponent(consumer).visit(block)
+    }
+
+
+    val template = createHTML()
+        .div("ui stackable card") {
+            div("content") {
+                div("large header") {+"{{sino.form}}"}
+                div("huge meta") {
+                    text_span_component {
+                        attributes["v-bind:text"] = "e.fanqie"
+                    }
+                }
+                div("ui segment") {
+                    p { +"國音："
+                        text_span_component {attributes["v-bind:text"] = "e.guoyin"}
+                    }
+                    p { +"台甘："
+                        text_span_component {attributes["v-bind:text"] = "e.taikam"}
+                    }
+                    p { +"普閩："
+                        text_span_component {attributes["v-bind:text"] = "e.pumin"}
+                    }
+                }
+                div("ui segment") {
+                    h2 {+"詞："}
+                    p(){
+                        attributes["v-for"] = "w in e.words"
+                        router_link {
+                            attributes["v-bind:to"] = "{name: 'words', params: {sino: w} }"
+                            +"{{w}}"
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+    val template2  = """
         <div class="ui stackable card">
         <div class="content">
             <div class="large header">{{sino.form}}</div>

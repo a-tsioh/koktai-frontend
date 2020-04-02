@@ -1,25 +1,45 @@
 package fr.magistry.koktai.components
 
+import fr.magistry.koktai.components.WordCardComponent.word_component
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import kotlin.browser.window
 
 
 object WordsPage {
-    val template = """
-        <div class="ui inverted segment" style="min-height:10em">
-                <h2>詞</h2>
-            <div v-if="loading" class="ui container">
-                <div class="ui active dimmer">
-                    <div class="ui large indeterminate text loader">查 「{{ sino }}」 中</div>
-                </div>
-            </div>
-            <div v-else class="ui Huge two stackable cards">
-                <word-component
-                  v-for="item in words"
-                  v-bind:word="item"
-                  v-bind:key="item.key"></word-component>
-            </div>
-        </div>
-    """.trimIndent()
+
+    class Component(consumer: TagConsumer<*>) :
+        HTMLTag("words-page", consumer, emptyMap(),
+            inlineTag = true, emptyTag = false) {
+    }
+
+    fun DIV.words_page(block: Component.() -> Unit = {}) {
+        Component(consumer).visit(block)
+    }
+
+    val template = createHTML()
+        .div("ui inverted segment") {
+            style {unsafe {+"min-height:10em"} }
+            h2 {+"詞"}
+            div("ui container") {
+                attributes["v-if"] = "loading"
+                div("ui active dimmer") {
+                    div("ui large indeterminate text loader") {
+                        +"查 「{{ sino }}」 中"
+                    }
+                }
+            }
+            div("ui Huge two stackable cards") {
+                attributes["v-else"] = ""
+                word_component {
+                    attributes["v-for"] = "item in words"
+                    attributes["v-bind:word"] = "item"
+                    attributes["v-bind:key"] = "item.key"
+                }
+
+            }
+        }
+
     val props = arrayOf("sino")
     fun data(): dynamic  {
         return object {

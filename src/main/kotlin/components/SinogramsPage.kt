@@ -1,25 +1,46 @@
 package fr.magistry.koktai.components
 
+import fr.magistry.koktai.components.SinogramCardComponent.sinogram_component
+import fr.magistry.koktai.components.WordCardComponent.word_component
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import kotlin.browser.window
 
 
 object SinogramsPage {
-    val template = """
-        <div class="ui inverted segment" style="min-height:10em">
-            <h2>字</h2>
-            <div v-if="loading" class="ui container">
-                <div class="ui active dimmer">
-                    <div class="ui large  indeterminate text  loader">查 「{{ sino }}」 中</div>
-                </div>
-            </div>
-            <div v-else class="ui two stackable cards">
-                <sinogram-component
-                  v-for="item in entries"
-                  v-bind:sino="item"
-                  v-bind:key="item.key"></sinogram-component>
-            </div>
-        </div>
-    """.trimIndent()
+
+    class Component(consumer: TagConsumer<*>) :
+        HTMLTag("sinograms-page", consumer, emptyMap(),
+            inlineTag = true, emptyTag = false) {
+    }
+
+    fun DIV.sinograms_page(block: Component.() -> Unit = {}) {
+        Component(consumer).visit(block)
+    }
+
+    val template = createHTML()
+        .div("ui inverted segment") {
+            style { unsafe { +"min-height:10em" } }
+            h2 { +"字"}
+            div("ui container") {
+                attributes["v-if"] = "loading"
+                div("ui active dimmer") {
+                    div("ui large indeterminate text loader") {
+                        +"查 「{{ sino }}」 中"
+                    }
+                }
+            }
+            div("ui Huge two stackable cards") {
+                attributes["v-else"] = ""
+                sinogram_component {
+                    attributes["v-for"] = "item in entries"
+                    attributes["v-bind:sino"] = "item"
+                    attributes["v-bind:key"] = "item.key"
+                }
+
+            }
+        }
+
     val props = arrayOf("sino")
     fun data(): dynamic  {
         return object {
