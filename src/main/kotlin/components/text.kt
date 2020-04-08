@@ -90,7 +90,8 @@ object TextComponent {
                 attributes["v-else-if"] = "isRuby"
                 attributes["v-bind:style"] = "style"
                 attributes["v-bind:data-html"] = "popup"
-                p("ruby") {
+                p("ruby zhuyin") {
+                    attributes["v-bind:style"] = "zhuyinStyle"
                     attributes["v-for"] = "l in text"
                     +"{{l}}"
                 }
@@ -171,22 +172,29 @@ object TextComponent {
                 padding-bottom: 0.2em;
             """.trimIndent()
         }
-        val style = {->
+        val zhuyinStyle = {
+            val paddingTop =  "0.4em"
+            """
+                padding-top:${paddingTop};
+                line-height:1em; 
+            """.trimIndent()
+        }
+        val style = {
             val self = js("this")
             when(self.elem) {
                 is RubyText -> {
                     val txt: String = self.elem.parts[0]
                     val l = txt.length
                     val fs = min(0.5, (1.0 / l)).toString()
+                    val paddingTop = "0.4em"
                     """font-size: ${fs}em;
+                    font-family: "Zhuyin Kaiti", cursive, serif;
                     position: relative;
                     top: 0.2em;
                     display: inline-block;
                     writing-mode: vertical-lr;
                     margin: 0px;
                     margin-right: 0.2em;
-                    padding-top:0.4em;
-                    line-height:1em;
                     vertical-align: center;
                     text-align: center;
                     text-orientation: upright;
